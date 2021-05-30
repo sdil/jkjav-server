@@ -1,0 +1,13 @@
+// Assuming that all location have the same available dates
+
+{
+    "locations": {
+        "Kuala Lumpur": [
+            {"PWTC": 8000},
+            {"UM": 5000}
+        ],
+        "Selangor": [
+            {"IDCC": 3000}
+        ]
+    }
+}
