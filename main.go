@@ -126,6 +126,7 @@ func SetLocation(ppv PPV) error {
 
 	_, err := conn.Do("SET", key, ppv.Availability)
 	if err != nil {
+        log.Println(fmt.Sprintf("error setting key %s: %v", key, err))
 		return fmt.Errorf("error setting key %s: %v", key, err)
 	}
 
