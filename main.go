@@ -36,11 +36,11 @@ type User struct {
 }
 
 func init() {
-    StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
-    EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
+	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
+	EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 
 	// Redis connection establishment
-    redisHost := os.Getenv("REDISHOST")
+	redisHost := os.Getenv("REDISHOST")
 	redisPort := os.Getenv("REDISPORT")
 	redisPassword := os.Getenv("REDISPASSWORD")
 	if redisHost == "" {
@@ -107,10 +107,10 @@ func main() {
 
 	app.Get("/submit", func(c *fiber.Ctx) error {
 
-        // This endpoint is only for load testing
-        // record insertion.
-        // This endpoint can be invoked with GET method
-        // and suitable for load testing tools like hey
+		// This endpoint is only for load testing
+		// record insertion.
+		// This endpoint can be invoked with GET method
+		// and suitable for load testing tools like hey
 
 		user := User{
 			MySejahteraID: "1000",
