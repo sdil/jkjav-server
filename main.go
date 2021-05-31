@@ -34,14 +34,15 @@ type User struct {
 }
 
 func init() {
-	redisHost := os.Getenv("containers-us-west-1.railway.app")
-	redisPort := os.Getenv("containers-us-west-1.railway.app")
+	redisHost := os.Getenv("REDISHOST")
+	redisPort := os.Getenv("REDISPORT")
 	redisPassword := os.Getenv("REDISPASSWORD")
 	if redisHost == "" {
 		redisHost = ""
 		redisPort = "6379"
 		redisPassword = ""
 	}
+
 	Pool = newPool(redisHost+":"+redisPort, redisPassword)
 	InitializeLocations()
 	CleanupHook()
