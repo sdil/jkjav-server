@@ -173,6 +173,27 @@ func SetLocation(ppv PPV) error {
 	return err
 }
 
+func GetLocation(location string) ([]PPV, error) {
+
+	ppvs := []PPV{}
+
+	// iterate each date
+	days := EndDate.Sub(StartDate).Hours() / 24
+	daysInt := int(days)
+	for i := 1; i < daysInt; i++ {
+		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
+		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
+
+		ppv, err := GetPPV("PWTC", dateString)
+		if err != nil {
+			return ppvs, err
+		}
+
+		ppvs = append(ppvs, ppv)
+	}
+	return ppvs, nil
+}
+
 func GetPPV(location string, date string) (PPV, error) {
 	conn := Pool.Get()
 	defer conn.Close()
@@ -197,27 +218,6 @@ func GetPPV(location string, date string) (PPV, error) {
 	ppv.Availability = availability
 
 	return ppv, err
-}
-
-func GetLocation(location string) ([]PPV, error) {
-
-	ppvs := []PPV{}
-
-	// iterate each date
-	days := EndDate.Sub(StartDate).Hours() / 24
-	daysInt := int(days)
-	for i := 1; i < daysInt; i++ {
-		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
-		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
-
-		ppv, err := GetPPV("PWTC", dateString)
-		if err != nil {
-			return ppvs, err
-		}
-
-		ppvs = append(ppvs, ppv)
-	}
-	return ppvs, nil
 }
 
 func InsertUser(ppv PPV, user *User) error {
