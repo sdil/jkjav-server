@@ -36,7 +36,11 @@ type User struct {
 }
 
 func init() {
-	redisHost := os.Getenv("REDISHOST")
+    StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
+    EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
+
+	// Redis connection establishment
+    redisHost := os.Getenv("REDISHOST")
 	redisPort := os.Getenv("REDISPORT")
 	redisPassword := os.Getenv("REDISPASSWORD")
 	if redisHost == "" {
@@ -44,11 +48,8 @@ func init() {
 		redisPort = "6379"
 		redisPassword = ""
 	}
-
 	Pool = newPool(redisHost+":"+redisPort, redisPassword)
 
-	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
-	EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 	InitializeLocations()
 	CleanupHook()
 }
@@ -87,9 +88,9 @@ func main() {
 		}
 
 		ppv, err := GetPPV(user.Location, user.Date)
-        if err != nil {
+		if err != nil {
 			return c.SendString("Failed to get PPV info")
-        }
+		}
 		if ppv.Availability <= 0 {
 			return c.SendString("No more availability")
 		}
@@ -106,10 +107,15 @@ func main() {
 
 	app.Get("/submit", func(c *fiber.Ctx) error {
 
+        // This endpoint is only for load testing
+        // record insertion.
+        // This endpoint can be invoked with GET method
+        // and suitable for load testing tools like hey
+
 		user := User{
 			MySejahteraID: "1000",
-            Date: "20210601",
-            Location: "PWTC",
+			Date:          "20210601",
+			Location:      "PWTC",
 		}
 
 		ppv, err := GetPPV("PWTC", "20210601")
@@ -168,7 +174,7 @@ func SetLocation(ppv PPV) error {
 }
 
 func GetPPV(location string, date string) (PPV, error) {
-    conn := Pool.Get()
+	conn := Pool.Get()
 	defer conn.Close()
 
 	// iterate each date
@@ -197,7 +203,7 @@ func GetLocation(location string) ([]PPV, error) {
 
 	ppvs := []PPV{}
 
-    // iterate each date
+	// iterate each date
 	days := EndDate.Sub(StartDate).Hours() / 24
 	daysInt := int(days)
 	for i := 1; i < daysInt; i++ {
@@ -205,13 +211,13 @@ func GetLocation(location string) ([]PPV, error) {
 		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
 
 		ppv, err := GetPPV("PWTC", dateString)
-        if err != nil {
-            return ppvs, err
-        }
+		if err != nil {
+			return ppvs, err
+		}
 
-        ppvs = append(ppvs, ppv)
+		ppvs = append(ppvs, ppv)
 	}
-    return ppvs, nil
+	return ppvs, nil
 }
 
 func InsertUser(ppv PPV, user *User) error {
