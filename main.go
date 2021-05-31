@@ -108,9 +108,11 @@ func main() {
 
 		user := User{
 			MySejahteraID: "1000",
+            Date: "20210601",
+            Location: "PWTC",
 		}
 
-		ppv, err := GetPPV("PWTC", "20210501")
+		ppv, err := GetPPV("PWTC", "20210601")
 		if ppv.Availability <= 0 {
 			return c.SendString("No more availability")
 		}
