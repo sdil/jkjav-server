@@ -34,7 +34,7 @@ type User struct {
 }
 
 func init() {
-	redisHost := os.Getenv("REDISHOST")
+	redisHost := os.Getenv("REDIS_URL")
 	if redisHost == "" {
 		redisHost = ":6379"
 	}
