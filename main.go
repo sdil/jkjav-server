@@ -68,13 +68,10 @@ func main() {
 			return c.SendString("Please select a state")
 		}
 
-		ppvs := []PPV{}
-		ppv, err := GetLocation("PWTC", "20210601")
+		ppvs, err := GetLocation("PWTC")
 		if err != nil {
 			c.SendString(err.Error())
 		}
-
-		ppvs = append(ppvs, ppv)
 
 		// Set Cache-control header to 1s
 		c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
@@ -89,7 +86,10 @@ func main() {
 			return err
 		}
 
-		ppv, err := GetLocation(user.Location, user.Date)
+		ppv, err := GetPPV(user.Location, user.Date)
+        if err != nil {
+			return c.SendString("Failed to get PPV info")
+        }
 		if ppv.Availability <= 0 {
 			return c.SendString("No more availability")
 		}
@@ -110,7 +110,7 @@ func main() {
 			MySejahteraID: "1000",
 		}
 
-		ppv, err := GetLocation("PWTC", "20210501")
+		ppv, err := GetPPV("PWTC", "20210501")
 		if ppv.Availability <= 0 {
 			return c.SendString("No more availability")
 		}
@@ -165,9 +165,8 @@ func SetLocation(ppv PPV) error {
 	return err
 }
 
-func GetLocation(location string, date string) (PPV, error) {
-
-	conn := Pool.Get()
+func GetPPV(location string, date string) (PPV, error) {
+    conn := Pool.Get()
 	defer conn.Close()
 
 	// iterate each date
@@ -190,6 +189,27 @@ func GetLocation(location string, date string) (PPV, error) {
 	ppv.Availability = availability
 
 	return ppv, err
+}
+
+func GetLocation(location string) ([]PPV, error) {
+
+	ppvs := []PPV{}
+
+    // iterate each date
+	days := EndDate.Sub(StartDate).Hours() / 24
+	daysInt := int(days)
+	for i := 1; i < daysInt; i++ {
+		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
+		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
+
+		ppv, err := GetPPV("PWTC", dateString)
+        if err != nil {
+            return ppvs, err
+        }
+
+        ppvs = append(ppvs, ppv)
+	}
+    return ppvs, nil
 }
 
 func InsertUser(ppv PPV, user *User) error {
