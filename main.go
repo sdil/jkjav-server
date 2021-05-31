@@ -34,11 +34,15 @@ type User struct {
 }
 
 func init() {
-	redisHost := os.Getenv("REDIS_URL")
+	redisHost := os.Getenv("containers-us-west-1.railway.app")
+	redisPort := os.Getenv("containers-us-west-1.railway.app")
+	redisPassword := os.Getenv("REDISPASSWORD")
 	if redisHost == "" {
-		redisHost = ":6379"
+		redisHost = ""
+		redisPort = "6379"
+		redisPassword = ""
 	}
-	Pool = newPool(redisHost)
+	Pool = newPool(redisHost+":"+redisPort, redisPassword)
 	InitializeLocations()
 	CleanupHook()
 }
@@ -53,21 +57,21 @@ func main() {
 
 	app.Get("/list-ppv", func(c *fiber.Ctx) error {
 
-        state := c.Query("state")
-        if state == "" {
-            return c.SendString("Please select a state")
-        }
-        
-        availablePPV := []PPV{}
+		state := c.Query("state")
+		if state == "" {
+			return c.SendString("Please select a state")
+		}
+
+		availablePPV := []PPV{}
 		ppv, err := GetLocation("PWTC")
 		if err != nil {
-            c.SendString(err.Error())
+			c.SendString(err.Error())
 		}
-        
+
 		availablePPV = append(availablePPV, ppv)
 
-        // Set Cache-control header to 1s
-        c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
+		// Set Cache-control header to 1s
+		c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
 
 		return c.JSON(availablePPV)
 	})
@@ -95,10 +99,10 @@ func main() {
 		return c.JSON(user)
 	})
 
-    port := os.Getenv("PORT")
-    if port == "" {
-        port = "3000"
-    }
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
 
 	app.Listen(":" + port)
 }
@@ -126,7 +130,7 @@ func SetLocation(ppv PPV) error {
 
 	_, err := conn.Do("SET", key, ppv.Availability)
 	if err != nil {
-        log.Println(fmt.Sprintf("error setting key %s: %v", key, err))
+		log.Println(fmt.Sprintf("error setting key %s: %v", key, err))
 		return fmt.Errorf("error setting key %s: %v", key, err)
 	}
 
@@ -180,7 +184,9 @@ func SetUser(ppv PPV, user User) error {
 	return nil
 }
 
-func newPool(server string) *redis.Pool {
+func newPool(server string, password string) *redis.Pool {
+
+	log.Println("Connecting to redis server " + server)
 
 	return &redis.Pool{
 
@@ -188,7 +194,7 @@ func newPool(server string) *redis.Pool {
 		IdleTimeout: 240 * time.Second,
 
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", server)
+			c, err := redis.Dial("tcp", server, redis.DialPassword(password))
 			if err != nil {
 				return nil, err
 			}
