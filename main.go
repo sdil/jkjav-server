@@ -39,12 +39,11 @@ func init() {
 		redisHost = ":6379"
 	}
 	Pool = newPool(redisHost)
-	cleanupHook()
+	InitializeLocations()
+	CleanupHook()
 }
 
 func main() {
-
-	InitializeLocations()
 
 	app := fiber.New()
 
@@ -53,20 +52,28 @@ func main() {
 	})
 
 	app.Get("/list-ppv", func(c *fiber.Ctx) error {
-        // Set Cache-control header to 1s
+
+        state := c.Query("state")
+        if state == "" {
+            return c.SendString("Please select a state")
+        }
         
-		availablePPV := []PPV{}
+        availablePPV := []PPV{}
 		ppv, err := GetLocation("PWTC")
-
 		if err != nil {
-			c.SendString(err.Error())
+            c.SendString(err.Error())
 		}
-
+        
 		availablePPV = append(availablePPV, ppv)
+
+        // Set Cache-control header to 1s
+        c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
+
 		return c.JSON(availablePPV)
 	})
 
 	app.Get("/submit", func(c *fiber.Ctx) error {
+
 		user := User{
 			MySejahteraID: "850113021157",
 			FirstName:     "Ahmad",
@@ -82,7 +89,9 @@ func main() {
 		if err != nil {
 			c.SendString(err.Error())
 		}
+
 		// Publish message to Message Queue Broker
+
 		return c.JSON(user)
 	})
 
@@ -115,7 +124,7 @@ func SetLocation(ppv PPV) error {
 		return fmt.Errorf("error setting key %s: %v", key, err)
 	}
 
-	log.Println("Added location " + ppv.Location + " date " + ppv.Date)
+	log.Println("Added location " + key)
 	return err
 }
 
@@ -136,7 +145,7 @@ func GetLocation(location string) (PPV, error) {
 
 	availability, err := strconv.Atoi(string(data))
 	if err != nil {
-		log.Println("error to read location availability: " + err.Error())
+		log.Println("error reading location availability: " + err.Error())
 	}
 
 	ppv.Location = location
@@ -187,7 +196,7 @@ func newPool(server string) *redis.Pool {
 	}
 }
 
-func cleanupHook() {
+func CleanupHook() {
 
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
