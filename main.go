@@ -14,7 +14,9 @@ import (
 )
 
 var (
-	Pool *redis.Pool
+	Pool      *redis.Pool
+	StartDate time.Time
+	EndDate   time.Time
 )
 
 type PPV struct {
@@ -24,13 +26,13 @@ type PPV struct {
 }
 
 type User struct {
-	MySejahteraID string
-	FirstName     string
-	LastName      string
-	Address       string
-	Location      string
-	PhoneNumber   string
-	Date          string
+	MySejahteraID string `json:"mysejahteraId" redis:"mysejahteraId"`
+	FirstName     string `json:"firstName" redis:"firstName"`
+	LastName      string `json:"lastName" redis:"lastName"`
+	Address       string `json:"address" redis:"address"`
+	Location      string `json:"location" redis:"location"`
+	PhoneNumber   string `json:"phoneNumber" redis:"phoneNumber"`
+	Date          string `json:"date" redis:"date"`
 }
 
 func init() {
@@ -44,6 +46,9 @@ func init() {
 	}
 
 	Pool = newPool(redisHost+":"+redisPort, redisPassword)
+
+	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
+	EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 	InitializeLocations()
 	CleanupHook()
 }
@@ -63,36 +68,56 @@ func main() {
 			return c.SendString("Please select a state")
 		}
 
-		availablePPV := []PPV{}
-		ppv, err := GetLocation("PWTC")
+		ppvs := []PPV{}
+		ppv, err := GetLocation("PWTC", "20210601")
 		if err != nil {
 			c.SendString(err.Error())
 		}
 
-		availablePPV = append(availablePPV, ppv)
+		ppvs = append(ppvs, ppv)
 
 		// Set Cache-control header to 1s
 		c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
 
-		return c.JSON(availablePPV)
+		return c.JSON(ppvs)
+	})
+
+	app.Post("/submit", func(c *fiber.Ctx) error {
+
+		user := new(User)
+		if err := c.BodyParser(user); err != nil {
+			return err
+		}
+
+		ppv, err := GetLocation(user.Location, user.Date)
+		if ppv.Availability <= 0 {
+			return c.SendString("No more availability")
+		}
+
+		err = InsertUser(ppv, user)
+		if err != nil {
+			return c.SendString(err.Error())
+		}
+
+		// Publish message to Message Queue Broker
+
+		return c.JSON(user)
 	})
 
 	app.Get("/submit", func(c *fiber.Ctx) error {
 
 		user := User{
-			MySejahteraID: "850113021157",
-			FirstName:     "Ahmad",
-			LastName:      "Albab",
-			Address:       "Lot 8-B, Taman Kulai, 14339, Johor Bahru",
-			Location:      "PWTC",
-			PhoneNumber:   "0149221442",
-			Date:          "20210530",
+			MySejahteraID: "1000",
 		}
-		ppv := PPV{Location: "PWTC", Date: "2021-05-01"}
 
-		err := SetUser(ppv, user)
+		ppv, err := GetLocation("PWTC", "20210501")
+		if ppv.Availability <= 0 {
+			return c.SendString("No more availability")
+		}
+
+		err = InsertUser(ppv, &user)
 		if err != nil {
-			c.SendString(err.Error())
+			return c.SendString(err.Error())
 		}
 
 		// Publish message to Message Queue Broker
@@ -114,11 +139,12 @@ func InitializeLocations() {
 	log.Println("initialize locations")
 
 	// iterate each date
-	ppv1 := PPV{Location: "PWTC", Date: "2021-05-01", Availability: 1000}
-	ppvs := []PPV{}
-	ppvs = append(ppvs, ppv1)
-
-	for _, ppv := range ppvs {
+	days := EndDate.Sub(StartDate).Hours() / 24
+	daysInt := int(days)
+	for i := 1; i < daysInt; i++ {
+		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
+		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
+		ppv := PPV{Location: "PWTC", Date: dateString, Availability: 1000}
 		SetLocation(ppv)
 	}
 }
@@ -139,13 +165,13 @@ func SetLocation(ppv PPV) error {
 	return err
 }
 
-func GetLocation(location string) (PPV, error) {
+func GetLocation(location string, date string) (PPV, error) {
 
 	conn := Pool.Get()
 	defer conn.Close()
 
 	// iterate each date
-	key := "location:" + location + ":2021-05-01"
+	key := "location:" + location + ":" + date
 
 	ppv := PPV{}
 	var data []byte
@@ -160,27 +186,34 @@ func GetLocation(location string) (PPV, error) {
 	}
 
 	ppv.Location = location
-	ppv.Date = "2021-05-01"
+	ppv.Date = date
 	ppv.Availability = availability
 
 	return ppv, err
 }
 
-func SetUser(ppv PPV, user User) error {
+func InsertUser(ppv PPV, user *User) error {
 	conn := Pool.Get()
 	defer conn.Close()
 
-	// Multi
+	// Start a transaction
+	conn.Send("MULTI")
+
 	ppvKey := "location:" + ppv.Location + ":" + ppv.Date
-	if _, err := redis.Int(conn.Do("DECR", ppvKey)); err != nil {
+	if err := conn.Send("DECR", ppvKey); err != nil {
 		return fmt.Errorf("error setting key %s: %v", ppvKey, err)
 	}
 
 	userKey := "user:" + user.MySejahteraID
-	if _, err := conn.Do("HMSET", redis.Args{}.Add(userKey).AddFlat(user)...); err != nil {
+	if err := conn.Send("HMSET", redis.Args{}.Add(userKey).AddFlat(user)...); err != nil {
 		return fmt.Errorf("error setting key %s: %v", userKey, err)
 	}
-	// Commit
+
+	// Execute Transaction
+	_, err := conn.Do("EXEC")
+	if err != nil {
+		return fmt.Errorf("error setting key %s: %v", userKey, err)
+	}
 
 	return nil
 }
