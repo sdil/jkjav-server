@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -18,6 +19,7 @@ var (
 
 type PPV struct {
 	Location     string
+	Date         string
 	Availability int
 }
 
@@ -27,6 +29,7 @@ type User struct {
 	LastName      string
 	Address       string
 	Location      string
+	PhoneNumber   string
 	Date          string
 }
 
@@ -51,25 +54,32 @@ func main() {
 
 	app.Get("/list-ppv", func(c *fiber.Ctx) error {
 		availablePPV := []PPV{}
-		ppv := PPV{Location: "PWTC", Availability: 1000}
+		ppv, err := GetLocation("PWTC")
+
+		if err != nil {
+			c.SendString(err.Error())
+		}
+
 		availablePPV = append(availablePPV, ppv)
 		return c.JSON(availablePPV)
 	})
 
 	app.Get("/submit", func(c *fiber.Ctx) error {
 		user := User{
-            MySejahteraID: "850113021157",
-            FirstName: "Ahmad",
-            LastName: "Albab",
-            Address: "Lot 8-B, Taman Kulai, 14339, Johor Bahru",
-            Location: "PWTC",
-            Date: "20210530",
-        }
-        
-        err := SetUser(user.MySejahteraID, user)
-        if err != nil {
-            c.SendString(err.Error())
-        }
+			MySejahteraID: "850113021157",
+			FirstName:     "Ahmad",
+			LastName:      "Albab",
+			Address:       "Lot 8-B, Taman Kulai, 14339, Johor Bahru",
+			Location:      "PWTC",
+			PhoneNumber:   "0149221442",
+			Date:          "20210530",
+		}
+		ppv := PPV{Location: "PWTC", Date: "2021-05-01"}
+
+		err := SetUser(ppv, user)
+		if err != nil {
+			c.SendString(err.Error())
+		}
 		// Publish message to Message Queue Broker
 		return c.JSON(user)
 	})
@@ -81,30 +91,76 @@ func InitializeLocations() {
 	// Read locations.json file
 	// And ensure the locations key in Redis exists
 	log.Println("initialize locations")
+
+	// iterate each date
+	ppv1 := PPV{Location: "PWTC", Date: "2021-05-01", Availability: 1000}
+	ppvs := []PPV{}
+	ppvs = append(ppvs, ppv1)
+
+	for _, ppv := range ppvs {
+		SetLocation(ppv)
+	}
 }
 
-func Get(key string) ([]byte, error) {
+func SetLocation(ppv PPV) error {
+	conn := Pool.Get()
+	defer conn.Close()
+
+	key := "location:" + ppv.Location + ":" + ppv.Date
+
+	_, err := conn.Do("SET", key, ppv.Availability)
+	if err != nil {
+		return fmt.Errorf("error setting key %s: %v", key, err)
+	}
+
+	log.Println("Added location " + ppv.Location + " date " + ppv.Date)
+	return err
+}
+
+func GetLocation(location string) (PPV, error) {
 
 	conn := Pool.Get()
 	defer conn.Close()
 
+	// iterate each date
+	key := "location:" + location + ":2021-05-01"
+
+	ppv := PPV{}
 	var data []byte
 	data, err := redis.Bytes(conn.Do("GET", key))
 	if err != nil {
-		return data, fmt.Errorf("error getting key %s: %v", key, err)
+		return ppv, fmt.Errorf("error getting key %s: %v", key, err)
 	}
-	return data, err
+
+	availability, err := strconv.Atoi(string(data))
+	if err != nil {
+		log.Println("error to read location availability: " + err.Error())
+	}
+
+	ppv.Location = location
+	ppv.Date = "2021-05-01"
+	ppv.Availability = availability
+
+	return ppv, err
 }
 
-func SetUser(key string, user User) error {
-    conn := Pool.Get()
+func SetUser(ppv PPV, user User) error {
+	conn := Pool.Get()
 	defer conn.Close()
 
-    if _, err := conn.Do("HMSET", redis.Args{}.Add(key).AddFlat(user)...); err != nil {
-		return fmt.Errorf("error setting key %s: %v", key, err)
+	// Multi
+	ppvKey := "location:" + ppv.Location + ":" + ppv.Date
+	if _, err := redis.Int(conn.Do("DECR", ppvKey)); err != nil {
+		return fmt.Errorf("error setting key %s: %v", ppvKey, err)
 	}
 
-    return nil
+	userKey := "user:" + user.MySejahteraID
+	if _, err := conn.Do("HMSET", redis.Args{}.Add(userKey).AddFlat(user)...); err != nil {
+		return fmt.Errorf("error setting key %s: %v", userKey, err)
+	}
+	// Commit
+
+	return nil
 }
 
 func newPool(server string) *redis.Pool {
