@@ -34,7 +34,7 @@ type User struct {
 }
 
 func init() {
-	redisHost := os.Getenv("REDIS_HOST")
+	redisHost := os.Getenv("REDISHOST")
 	if redisHost == "" {
 		redisHost = ":6379"
 	}
@@ -95,7 +95,12 @@ func main() {
 		return c.JSON(user)
 	})
 
-	app.Listen(":3000")
+    port := os.Getenv("PORT")
+    if port == "" {
+        port = "3000"
+    }
+
+	app.Listen(":" + port)
 }
 
 func InitializeLocations() {
