@@ -53,6 +53,8 @@ func main() {
 	})
 
 	app.Get("/list-ppv", func(c *fiber.Ctx) error {
+        // Set Cache-control header to 1s
+        
 		availablePPV := []PPV{}
 		ppv, err := GetLocation("PWTC")
 
