@@ -20,9 +20,9 @@ var (
 )
 
 type PPV struct {
-	Location     string
-	Date         string
-	Availability int
+	Location     string `json:"location" redis:"location"`
+	Date         string `json:"date" redis:"date"`
+	Availability int    `json:"availability" redis:"availability"`
 }
 
 type User struct {
