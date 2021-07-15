@@ -97,7 +97,7 @@ func main() {
 
 		err = InsertUser(ppv, user)
 		if err != nil {
-			return c.SendString(err.Error())
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
 
 		// Publish message to Message Queue Broker
@@ -125,7 +125,7 @@ func main() {
 
 		err = InsertUser(ppv, &user)
 		if err != nil {
-			return c.SendString(err.Error())
+			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
 
 		// Publish message to Message Queue Broker
@@ -224,10 +224,14 @@ func InsertUser(ppv PPV, user *User) error {
 	conn := Pool.Get()
 	defer conn.Close()
 
+	ppvKey := "location:" + ppv.Location + ":" + ppv.Date
+
 	// Start a transaction
+	if _, err := conn.Do("WATCH", ppvKey); err != nil {
+		return fmt.Errorf("Failed to watch key")
+	}
 	conn.Send("MULTI")
 
-	ppvKey := "location:" + ppv.Location + ":" + ppv.Date
 	if err := conn.Send("DECR", ppvKey); err != nil {
 		return fmt.Errorf("error setting key %s: %v", ppvKey, err)
 	}
