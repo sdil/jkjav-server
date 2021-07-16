@@ -10,6 +10,8 @@ This is the implementation of API server described in this [blog post](https://f
 
 ## Load Test Result
 
+The server is serving 7,827 requests per second  with 25% of those requests are sub milisecond in response time. This test is run on a Lenovo laptop T470p with 8-core i7 processor and 16GB of RAM.
+
 ```shell
 hey -c 10 -z 1s http://localhost:3000/submit
 
@@ -79,3 +81,4 @@ keys location:*
 
 - Initialize multiple locations
 - Connect to a Message Queue broker
+- Provide OpenAPI documentation
