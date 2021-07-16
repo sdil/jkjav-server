@@ -11,6 +11,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gomodule/redigo/redis"
+	"github.com/google/uuid"
 )
 
 var (
@@ -87,15 +88,7 @@ func main() {
 			return err
 		}
 
-		ppv, err := GetPPV(user.Location, user.Date)
-		if err != nil {
-			return c.SendString("Failed to get PPV info")
-		}
-		if ppv.Availability <= 0 {
-			return c.SendString("No more availability")
-		}
-
-		err = InsertUser(ppv, user)
+		err := InsertUser(user)
 		if err != nil {
 			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
@@ -117,15 +110,17 @@ func main() {
 			Date:          "20210601",
 			Location:      "PWTC",
 		}
+		user.MySejahteraID = uuid.New().String()
 
-		ppv, err := GetPPV("PWTC", "20210601")
-		if ppv.Availability <= 0 {
-			return c.SendString("No more availability")
-		}
-
-		err = InsertUser(ppv, &user)
+		err := InsertUser(&user)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+			log.Println("failed to insert user. err: " + err.Error())
+
+			if err.Error() == "Sorry, ppv is fully booked" {
+				return c.Status(fiber.StatusTeapot).SendString(err.Error())
+			} else {
+				return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+			}
 		}
 
 		// Publish message to Message Queue Broker
@@ -165,7 +160,7 @@ func SetLocation(ppv PPV) error {
 
 	_, err := conn.Do("SET", key, ppv.Availability)
 	if err != nil {
-		log.Println(fmt.Sprintf("error setting key %s: %v", key, err))
+		log.Printf("error setting key %s: %v", key, err)
 		return fmt.Errorf("error setting key %s: %v", key, err)
 	}
 
@@ -177,7 +172,7 @@ func GetLocation(location string) ([]PPV, error) {
 
 	ppvs := []PPV{}
 
-	// iterate each date
+	// Iterate each date
 	days := EndDate.Sub(StartDate).Hours() / 24
 	daysInt := int(days)
 	for i := 1; i < daysInt; i++ {
@@ -220,32 +215,65 @@ func GetPPV(location string, date string) (PPV, error) {
 	return ppv, err
 }
 
-func InsertUser(ppv PPV, user *User) error {
+func InsertUser(user *User) error {
 	conn := Pool.Get()
 	defer conn.Close()
 
-	ppvKey := "location:" + ppv.Location + ":" + ppv.Date
+	ppvKey := "location:" + user.Location + ":" + user.Date
+
+	ok, err := redis.Bool(conn.Do("EXISTS", ppvKey))
+    if err != nil {
+        return fmt.Errorf("failed to location key %s. error: %v", ppvKey, err)
+    }
+	if ok == false {
+        return fmt.Errorf("ppv %s location & date combination is invalid", ppvKey)
+	}
+
+	log.Printf("adding new user %s and updating ppv %s availability", user.MySejahteraID, ppvKey)
 
 	// Start a transaction
-	if _, err := conn.Do("WATCH", ppvKey); err != nil {
-		return fmt.Errorf("Failed to watch key")
+	if _, err = conn.Do("WATCH", ppvKey); err != nil {
+		return fmt.Errorf("Failed to watch key %s: %v", ppvKey, err)
 	}
+
+	var availability []byte
+	availability, err = redis.Bytes(conn.Do("GET", ppvKey))
+	if err != nil {
+		return fmt.Errorf("error getting key %s: %v", ppvKey, err)
+	}
+
+	log.Printf("%s availability is %s. attempting to add user %s", ppvKey, string(availability), user.MySejahteraID)
+
+	if string(availability) == "0" {
+		if _, err = conn.Do("UNWATCH"); err != nil {
+			log.Printf("%s failed to unwatch", ppvKey)
+			return fmt.Errorf("Failed to unwatch key %s: %v", ppvKey, err)
+		}
+
+		log.Printf("%s is fully booked", ppvKey)
+		return fmt.Errorf("Sorry, ppv is fully booked")
+	}
+
 	conn.Send("MULTI")
 
+	// Decrease the counter
 	if err := conn.Send("DECR", ppvKey); err != nil {
 		return fmt.Errorf("error setting key %s: %v", ppvKey, err)
 	}
 
+	// Add new user dict
 	userKey := "user:" + user.MySejahteraID
 	if err := conn.Send("HMSET", redis.Args{}.Add(userKey).AddFlat(user)...); err != nil {
 		return fmt.Errorf("error setting key %s: %v", userKey, err)
 	}
 
 	// Execute Transaction
-	_, err := conn.Do("EXEC")
+	_, err = conn.Do("EXEC")
 	if err != nil {
 		return fmt.Errorf("error setting key %s: %v", userKey, err)
 	}
+
+	log.Printf("successfully added new user %s and updated ppv %s availability", user.MySejahteraID, ppvKey)
 
 	return nil
 }
