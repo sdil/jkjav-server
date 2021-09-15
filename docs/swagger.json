@@ -1,7 +1,7 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "High performant API Server",
+        "description": "High performant JKJAV API Server",
         "title": "JKJAV API Server",
         "contact": {},
         "version": "1.0"
@@ -21,7 +21,7 @@
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "list PPV by state",
+                        "description": "list PPV by state. The only available option is PWTC",
                         "name": "state",
                         "in": "query"
                     }
@@ -41,7 +41,7 @@
         },
         "/submit": {
             "post": {
-                "description": "Submit vaccine book slot",
+                "description": "Submit vaccine booking slot",
                 "consumes": [
                     "application/json"
                 ],

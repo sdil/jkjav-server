@@ -36,7 +36,7 @@ var doc = `{
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "list PPV by state",
+                        "description": "list PPV by state. The only available option is PWTC",
                         "name": "state",
                         "in": "query"
                     }
@@ -56,7 +56,7 @@ var doc = `{
         },
         "/submit": {
             "post": {
-                "description": "Submit vaccine book slot",
+                "description": "Submit vaccine booking slot",
                 "consumes": [
                     "application/json"
                 ],
@@ -146,7 +146,7 @@ var SwaggerInfo = swaggerInfo{
 	BasePath:    "/",
 	Schemes:     []string{},
 	Title:       "JKJAV API Server",
-	Description: "High performant API Server",
+	Description: "High performant JKJAV API Server",
 }
 
 type s struct{}

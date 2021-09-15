@@ -28,7 +28,7 @@ definitions:
     type: object
 info:
   contact: {}
-  description: High performant API Server
+  description: High performant JKJAV API Server
   title: JKJAV API Server
   version: "1.0"
 paths:
@@ -38,7 +38,7 @@ paths:
       - application/json
       description: Get PPV slots by state
       parameters:
-      - description: list PPV by state
+      - description: list PPV by state. The only available option is PWTC
         in: query
         name: state
         type: string
@@ -56,7 +56,7 @@ paths:
     post:
       consumes:
       - application/json
-      description: Submit vaccine book slot
+      description: Submit vaccine booking slot
       parameters:
       - description: User info
         in: body
