@@ -67,7 +67,7 @@ func init() {
 func main() {
 
 	if Environment == "production" {
-		docs.SwaggerInfo.Host = "api.jkjav.com"
+		docs.SwaggerInfo.Host = "jkjav-server-production.up.railway.app"
 	} else {
 		docs.SwaggerInfo.Host = "localhost:3000"
 	}
@@ -143,7 +143,7 @@ func InitializeLocations() {
 // @Description Get PPV slots by state
 // @Accept  json
 // @Produce  json
-// @Param state query string false "list PPV by state"
+// @Param state query string false "list PPV by state. The only available option is PWTC"
 // @Success 200 {array} PPV
 // @Router /list-ppv [get]
 func listPPV(c *fiber.Ctx) error {
@@ -165,7 +165,7 @@ func listPPV(c *fiber.Ctx) error {
 
 // Submit godoc
 // @Summary Submit
-// @Description Submit vaccine book slot
+// @Description Submit vaccine booking slot
 // @Accept  json
 // @Produce  json
 // @Param user body User true "User info"
