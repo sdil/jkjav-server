@@ -12,7 +12,6 @@ import (
 	swagger "github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gomodule/redigo/redis"
-	"github.com/google/uuid"
 	"github.com/sdil/jkjav-server/docs"
 )
 
