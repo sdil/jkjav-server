@@ -20,7 +20,6 @@ var (
 	Pool        *redis.Pool
 	StartDate   time.Time
 	EndDate     time.Time
-	Environment string
 )
 
 type PPV struct {
@@ -43,8 +42,6 @@ func init() {
 	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
 	EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 
-	Environment = os.Getenv("ENVIRONMENT")
-
 	// Redis connection establishment
 	redisHost := os.Getenv("REDISHOST")
 	redisPort := os.Getenv("REDISPORT")
@@ -62,14 +59,15 @@ func init() {
 
 // @title JKJAV API Server
 // @version 1.0
-// @description High performant API Server
+// @description High performant JKJAV API Server
 // @BasePath /
 func main() {
 
-	if Environment == "production" {
-		docs.SwaggerInfo.Host = "jkjav-server-production.up.railway.app"
-	} else {
+	RAILWAY_HOST := os.Getenv("RAILWAY_STATIC_URL")
+	if RAILWAY_HOST == "" {
 		docs.SwaggerInfo.Host = "localhost:3000"
+	} else {
+		docs.SwaggerInfo.Host = RAILWAY_HOST
 	}
 
 	app := fiber.New()
@@ -77,42 +75,9 @@ func main() {
 	app.Get("/healthz", func(c *fiber.Ctx) error {
 		return c.SendString("OK")
 	})
-
 	app.Get("/swagger/*", swagger.Handler)
-
 	app.Get("/list-ppv", listPPV)
-
 	app.Post("/submit", submit)
-
-	app.Get("/submit", func(c *fiber.Ctx) error {
-
-		// This endpoint is only for load testing
-		// record insertion.
-		// This endpoint can be invoked with GET method
-		// and suitable for load testing tools like hey
-
-		user := User{
-			MySejahteraID: "1000",
-			Date:          "20210601",
-			Location:      "PWTC",
-		}
-		user.MySejahteraID = uuid.New().String()
-
-		err := InsertUser(&user)
-		if err != nil {
-			log.Println("failed to insert user. err: " + err.Error())
-
-			if err.Error() == "Sorry, ppv is fully booked" {
-				return c.Status(fiber.StatusTeapot).SendString(err.Error())
-			} else {
-				return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
-			}
-		}
-
-		// Publish message to Message Queue Broker
-
-		return c.JSON(user)
-	})
 
 	port := os.Getenv("PORT")
 	if port == "" {
