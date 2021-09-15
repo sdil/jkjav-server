@@ -1,0 +1,75 @@
+basePath: /
+definitions:
+  main.PPV:
+    properties:
+      availability:
+        type: integer
+      date:
+        type: string
+      location:
+        type: string
+    type: object
+  main.User:
+    properties:
+      address:
+        type: string
+      date:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      location:
+        type: string
+      mysejahteraId:
+        type: string
+      phoneNumber:
+        type: string
+    type: object
+info:
+  contact: {}
+  description: High performant API Server
+  title: JKJAV API Server
+  version: "1.0"
+paths:
+  /list-ppv:
+    get:
+      consumes:
+      - application/json
+      description: Get PPV slots by state
+      parameters:
+      - description: list PPV by state
+        in: query
+        name: state
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/main.PPV'
+            type: array
+      summary: List PPV
+  /submit:
+    post:
+      consumes:
+      - application/json
+      description: Submit vaccine book slot
+      parameters:
+      - description: User info
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/main.User'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/main.User'
+      summary: Submit
+swagger: "2.0"
