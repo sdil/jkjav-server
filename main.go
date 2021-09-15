@@ -9,15 +9,18 @@ import (
 	"syscall"
 	"time"
 
+	swagger "github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/uuid"
+	"github.com/sdil/jkjav-server/docs"
 )
 
 var (
-	Pool      *redis.Pool
-	StartDate time.Time
-	EndDate   time.Time
+	Pool        *redis.Pool
+	StartDate   time.Time
+	EndDate     time.Time
+	Environment string
 )
 
 type PPV struct {
@@ -40,6 +43,8 @@ func init() {
 	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
 	EndDate = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 
+	Environment = os.Getenv("ENVIRONMENT")
+
 	// Redis connection establishment
 	redisHost := os.Getenv("REDISHOST")
 	redisPort := os.Getenv("REDISPORT")
@@ -55,7 +60,17 @@ func init() {
 	CleanupHook()
 }
 
+// @title JKJAV API Server
+// @version 1.0
+// @description High performant API Server
+// @BasePath /
 func main() {
+
+	if Environment == "production" {
+		docs.SwaggerInfo.Host = "api.jkjav.com"
+	} else {
+		docs.SwaggerInfo.Host = "localhost:3000"
+	}
 
 	app := fiber.New()
 
@@ -63,40 +78,11 @@ func main() {
 		return c.SendString("OK")
 	})
 
-	app.Get("/list-ppv", func(c *fiber.Ctx) error {
+	app.Get("/swagger/*", swagger.Handler)
 
-		state := c.Query("state")
-		if state == "" {
-			return c.SendString("Please select a state")
-		}
+	app.Get("/list-ppv", listPPV)
 
-		ppvs, err := GetLocation("PWTC")
-		if err != nil {
-			c.SendString(err.Error())
-		}
-
-		// Set Cache-control header to 1s
-		c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
-
-		return c.JSON(ppvs)
-	})
-
-	app.Post("/submit", func(c *fiber.Ctx) error {
-
-		user := new(User)
-		if err := c.BodyParser(user); err != nil {
-			return err
-		}
-
-		err := InsertUser(user)
-		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
-		}
-
-		// Publish message to Message Queue Broker
-
-		return c.JSON(user)
-	})
+	app.Post("/submit", submit)
 
 	app.Get("/submit", func(c *fiber.Ctx) error {
 
@@ -150,6 +136,55 @@ func InitializeLocations() {
 		ppv := PPV{Location: "PWTC", Date: dateString, Availability: 1000}
 		SetLocation(ppv)
 	}
+}
+
+// ListPPV godoc
+// @Summary List PPV
+// @Description Get PPV slots by state
+// @Accept  json
+// @Produce  json
+// @Param state query string false "list PPV by state"
+// @Success 200 {array} PPV
+// @Router /list-ppv [get]
+func listPPV(c *fiber.Ctx) error {
+	state := c.Query("state")
+	if state == "" {
+		return c.SendString("Please select a state")
+	}
+
+	ppvs, err := GetLocation("PWTC")
+	if err != nil {
+		c.SendString(err.Error())
+	}
+
+	// Set Cache-control header to 1s
+	c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
+
+	return c.JSON(ppvs)
+}
+
+// Submit godoc
+// @Summary Submit
+// @Description Submit vaccine book slot
+// @Accept  json
+// @Produce  json
+// @Param user body User true "User info"
+// @Success 200 {object} User
+// @Router /submit [post]
+func submit(c *fiber.Ctx) error {
+	user := new(User)
+	if err := c.BodyParser(user); err != nil {
+		return err
+	}
+
+	err := InsertUser(user)
+	if err != nil {
+		return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+	}
+
+	// Publish message to Message Queue Broker
+
+	return c.JSON(user)
 }
 
 func SetLocation(ppv PPV) error {
@@ -222,11 +257,11 @@ func InsertUser(user *User) error {
 	ppvKey := "location:" + user.Location + ":" + user.Date
 
 	ok, err := redis.Bool(conn.Do("EXISTS", ppvKey))
-    if err != nil {
-        return fmt.Errorf("failed to location key %s. error: %v", ppvKey, err)
-    }
+	if err != nil {
+		return fmt.Errorf("failed to location key %s. error: %v", ppvKey, err)
+	}
 	if ok == false {
-        return fmt.Errorf("ppv %s location & date combination is invalid", ppvKey)
+		return fmt.Errorf("ppv %s location & date combination is invalid", ppvKey)
 	}
 
 	log.Printf("adding new user %s and updating ppv %s availability", user.MySejahteraID, ppvKey)
