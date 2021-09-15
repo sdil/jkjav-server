@@ -3,27 +3,37 @@ definitions:
   main.PPV:
     properties:
       availability:
+        example: 10
         type: integer
       date:
+        example: "20210516"
         type: string
       location:
+        example: PWTC
         type: string
     type: object
   main.User:
     properties:
       address:
+        example: Kuala Lumpur
         type: string
       date:
+        example: "20210516"
         type: string
       firstName:
+        example: Fadhil
         type: string
       lastName:
+        example: Yaacob
         type: string
       location:
+        example: PWTC
         type: string
       mysejahteraId:
+        example: "900127015527"
         type: string
       phoneNumber:
+        example: "0123456789"
         type: string
     type: object
 info:

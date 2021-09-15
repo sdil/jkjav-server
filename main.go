@@ -22,19 +22,19 @@ var (
 )
 
 type PPV struct {
-	Location     string `json:"location" redis:"location"`
-	Date         string `json:"date" redis:"date"`
-	Availability int    `json:"availability" redis:"availability"`
+	Location     string `json:"location" redis:"location" example:"PWTC"`
+	Date         string `json:"date" redis:"date" example:"20210516"`
+	Availability int    `json:"availability" redis:"availability" example:"10"`
 }
 
 type User struct {
-	MySejahteraID string `json:"mysejahteraId" redis:"mysejahteraId"`
-	FirstName     string `json:"firstName" redis:"firstName"`
-	LastName      string `json:"lastName" redis:"lastName"`
-	Address       string `json:"address" redis:"address"`
-	Location      string `json:"location" redis:"location"`
-	PhoneNumber   string `json:"phoneNumber" redis:"phoneNumber"`
-	Date          string `json:"date" redis:"date"`
+	MySejahteraID string `json:"mysejahteraId" redis:"mysejahteraId" example:"900127015527"`
+	FirstName     string `json:"firstName" redis:"firstName" example:"Fadhil"`
+	LastName      string `json:"lastName" redis:"lastName" example:"Yaacob"`
+	Address       string `json:"address" redis:"address" example:"Kuala Lumpur"`
+	Location      string `json:"location" redis:"location" example:"PWTC"`
+	PhoneNumber   string `json:"phoneNumber" redis:"phoneNumber" example:"0123456789"`
+	Date          string `json:"date" redis:"date" example:"20210516"`
 }
 
 func init() {

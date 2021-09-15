@@ -76,13 +76,16 @@
             "type": "object",
             "properties": {
                 "availability": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 10
                 },
                 "date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "20210516"
                 },
                 "location": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "PWTC"
                 }
             }
         },
@@ -90,25 +93,32 @@
             "type": "object",
             "properties": {
                 "address": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Kuala Lumpur"
                 },
                 "date": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "20210516"
                 },
                 "firstName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Fadhil"
                 },
                 "lastName": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "Yaacob"
                 },
                 "location": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "PWTC"
                 },
                 "mysejahteraId": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "900127015527"
                 },
                 "phoneNumber": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "0123456789"
                 }
             }
         }
