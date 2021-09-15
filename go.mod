@@ -22,3 +22,5 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/tools v0.1.5 // indirect
 )
+
+replace github.com/sdil/jkjav-server/docs => ./docs
