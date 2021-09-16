@@ -69,21 +69,26 @@ func main() {
 		docs.SwaggerInfo.Host = RAILWAY_HOST
 	}
 
-	app := fiber.New()
-
-	app.Get("/healthz", func(c *fiber.Ctx) error {
-		return c.SendString("OK")
-	})
-	app.Get("/swagger/*", swagger.Handler)
-	app.Get("/list-ppv", listPPV)
-	app.Post("/submit", submit)
-
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
 	}
 
+	app := Setup()
+
 	app.Listen(":" + port)
+}
+
+func Setup() *fiber.App {
+		app := fiber.New()
+
+	app.Get("/healthz", func(c *fiber.Ctx) error {
+		return c.SendString("OK")
+	})
+	app.Get("/swagger/*", swagger.Handler)
+	app.Get("/list-ppv", ListPPV)
+	app.Post("/submit", Submit)
+	return app
 }
 
 func InitializeLocations() {
@@ -110,10 +115,10 @@ func InitializeLocations() {
 // @Param state query string false "list PPV by state. The only available option is PWTC"
 // @Success 200 {array} PPV
 // @Router /list-ppv [get]
-func listPPV(c *fiber.Ctx) error {
+func ListPPV(c *fiber.Ctx) error {
 	state := c.Query("state")
 	if state == "" {
-		return c.SendString("Please select a state")
+		return c.Status(fiber.StatusBadRequest).SendString("Please select a state")
 	}
 
 	ppvs, err := GetLocation("PWTC")
@@ -135,7 +140,7 @@ func listPPV(c *fiber.Ctx) error {
 // @Param user body User true "User info"
 // @Success 200 {object} User
 // @Router /submit [post]
-func submit(c *fiber.Ctx) error {
+func Submit(c *fiber.Ctx) error {
 	user := new(User)
 	if err := c.BodyParser(user); err != nil {
 		return err

@@ -7,6 +7,7 @@ This is the implementation of API server described in this [blog post](https://f
 - Uses Redis transaction to prevent overbooking
 - Can handle over 7,000 requests per second without breaking a sweat
 - Seed the PWTC location (currently only 1 location)
+- OAS API Doc
 
 ## Load Test Result
 
@@ -79,6 +80,7 @@ keys location:*
 
 ## Improvements Can Be Made
 
-- Initialize multiple locations
+- Initialize multiple locations (data seed)
 - Connect to a Message Queue broker
-- Provide OpenAPI documentation
+- Improve unittest coverage
+- Structure the code into clean code architecture
