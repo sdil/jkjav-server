@@ -3,6 +3,7 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"testing"
@@ -44,7 +45,7 @@ func TestListPPVRoute(t *testing.T) {
 		res, err := app.Test(req)
 
 		// Ensure there's no error when requesting to the endpoint
-		assert.Nilf(t, err, test.description)
+		assert.Nilf(t, err, fmt.Sprintf("Failed to request to route %s", test.route))
 
 		// Verify if the status code is as expected
 		assert.Equalf(t, test.expectedCode, res.StatusCode, test.description)
@@ -54,7 +55,7 @@ func TestListPPVRoute(t *testing.T) {
 
 		// Reading the response body should work everytime, such that
 		// the err variable should be nil
-		assert.Nilf(t, err, test.description)
+		assert.Nilf(t, err, fmt.Sprintf("The response body %s is empty", test.route))
 
 		// Verify, that the reponse body equals the expected body
 		assert.Equalf(t, test.expectedBody, string(body), test.description)
