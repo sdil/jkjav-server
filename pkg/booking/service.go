@@ -5,7 +5,7 @@ import (
 )
 
 type Service interface {
-	InsertBooking(booking *entities.Booking) (entities.Booking, error)
+	InsertBooking(booking *entities.Booking) (*entities.Booking, error)
 }
 
 type service struct {
@@ -18,8 +18,19 @@ func NewService(r Repository) Service {
 	}
 }
 
-func (s *service) InsertBooking(booking *entities.Booking) (entities.Booking, error) {
-	s.repository.CreateBooking(booking)
+func (s *service) InsertBooking(booking *entities.Booking) (*entities.Booking, error) {
+	
+	// Insert the data in data store
+	_, err := s.repository.CreateBooking(booking)
+	if err != nil {
+		return nil, err
+	}
 
-	return *booking, nil
+	// Publish message to Kafka broker
+	err = s.repository.PublishMessage(booking)
+	if err != nil {
+		return nil, err
+	}
+
+	return booking, nil
 }

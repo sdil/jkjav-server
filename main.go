@@ -16,6 +16,7 @@ import (
 	"github.com/sdil/jkjav-server/pkg/booking"
 	"github.com/sdil/jkjav-server/pkg/entities"
 	"github.com/sdil/jkjav-server/pkg/station"
+	"gopkg.in/Shopify/sarama.v1"
 )
 
 var (
@@ -29,32 +30,24 @@ var (
 // @BasePath /
 func main() {
 
-	// Redis connection establishment
-	redisHost := os.Getenv("REDISHOST")
-	redisPort := os.Getenv("REDISPORT")
-	redisPassword := os.Getenv("REDISPASSWORD")
-	if redisHost == "" {
-		redisHost = ""
-		redisPort = "6379"
-		redisPassword = ""
-	}
-	Pool := newPool(redisHost+":"+redisPort, redisPassword)
+	Pool := newRedisPool()
 	defer Pool.Close()
 	
 	CleanupHook()
 
-	RAILWAY_HOST := os.Getenv("RAILWAY_STATIC_URL")
-	if RAILWAY_HOST == "" {
+	if RAILWAY_HOST := os.Getenv("RAILWAY_STATIC_URL"); RAILWAY_HOST == "" {
 		docs.SwaggerInfo.Host = "localhost:3000"
 	} else {
 		docs.SwaggerInfo.Host = RAILWAY_HOST
 	}
 
+	messageProducer := newKafkaProducer([]string{"localhost:9092"})
+
 	stationRepo := station.NewRepo(Pool)
 	stationService := station.NewService(stationRepo)
 	InitializeLocations(stationService)
 
-	bookingRepo := booking.NewRepo(Pool)
+	bookingRepo := booking.NewRepo(Pool, messageProducer)
 	bookingService := booking.NewService(bookingRepo)
 
 	port := os.Getenv("PORT")
@@ -71,6 +64,23 @@ func main() {
 	routes.BookingRouter(app, bookingService)
 
 	app.Listen(":" + port)
+}
+
+func newKafkaProducer(brokerList []string) sarama.SyncProducer {
+	// For the data collector, we are looking for strong consistency semantics.
+	// Because we don't change the flush settings, sarama will try to produce messages
+	// as fast as possible to keep latency low.
+	config := sarama.NewConfig()
+	config.Producer.RequiredAcks = sarama.WaitForAll // Wait for all in-sync replicas to ack the message
+	config.Producer.Retry.Max = 10                   // Retry up to 10 times to produce the message
+	config.Producer.Return.Successes = true
+
+	producer, err := sarama.NewSyncProducer(brokerList, config)
+	if err != nil {
+		log.Fatalln("Failed to start Sarama producer:", err)
+	}
+
+	return producer
 }
 
 func InitializeLocations(service station.Service) {
@@ -95,7 +105,19 @@ func InitializeLocations(service station.Service) {
 	}
 }
 
-func newPool(server string, password string) *redis.Pool {
+func newRedisPool() *redis.Pool {
+
+	// Redis connection establishment
+	redisHost := os.Getenv("REDISHOST")
+	redisPort := os.Getenv("REDISPORT")
+	redisPassword := os.Getenv("REDISPASSWORD")
+	if redisHost == "" {
+		redisHost = ""
+		redisPort = "6379"
+		redisPassword = ""
+	}
+
+	server := fmt.Sprintf("%s:%s", redisHost, redisPort)
 
 	log.Println("Connecting to redis server " + server)
 
@@ -107,7 +129,7 @@ func newPool(server string, password string) *redis.Pool {
 		IdleTimeout: 240 * time.Second,
 
 		Dial: func() (redis.Conn, error) {
-			c, err := redis.Dial("tcp", server, redis.DialPassword(password))
+			c, err := redis.Dial("tcp", server, redis.DialPassword(redisPassword))
 			if err != nil {
 				return nil, err
 			}

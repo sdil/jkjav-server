@@ -6,18 +6,22 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/sdil/jkjav-server/pkg/entities"
+	"gopkg.in/Shopify/sarama.v1"
 )
 type Repository interface{
 	CreateBooking(booking *entities.Booking) (*entities.Booking, error)
+	PublishMessage(booking *entities.Booking) error
 }
 
 type repository struct {
 	Pool *redis.Pool
+	MessageBroker sarama.SyncProducer
 }
 
-func NewRepo(pool *redis.Pool) Repository {
+func NewRepo(pool *redis.Pool, mb sarama.SyncProducer) Repository {
 	return &repository{
 		Pool: pool,
+		MessageBroker: mb,
 	}
 }
 
@@ -82,4 +86,12 @@ func (r *repository) CreateBooking(booking *entities.Booking) (*entities.Booking
 	log.Printf("successfully added new booking %s and updated station %s availability", booking.MySejahteraID, stationKey)
 
 	return booking, nil
+}
+
+func (r *repository) PublishMessage(booking *entities.Booking) error {
+	r.MessageBroker.SendMessage(&sarama.ProducerMessage{
+			Topic: "booking-slot",
+			Value: sarama.StringEncoder("test"),
+		})
+	return nil
 }

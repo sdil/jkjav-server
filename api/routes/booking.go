@@ -31,8 +31,6 @@ func createBooking(service booking.Service) fiber.Handler {
 			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
 		}
 	
-		// Publish message to Message Queue Broker
-	
 		return c.JSON(booking)
 	}
 }

@@ -4,13 +4,15 @@ This is the implementation of API server described in this [blog post](https://f
 
 ## Features
 
-- Uses Redis transaction to prevent overbooking
+- Uses Redis transaction to prevent overbooking and ensure atomicity
 - Can handle over 7,000 req/s without breaking a sweat
 - Seed the vaccine station (currently only 1 location)
 - Structured in Clean Architecture
 - OpenAPI doc for all endpoints available
 - Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms, 300 req/s to 800 req/s.
 - Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutine. This improves the response time from 10ms to 5ms, 800 req/s to 1200 req/s and avoid connection limit error from Redis server.
+- Connects to Kafka-compatible broker
+- Comes with docker-compose yaml file to ease environment creation
 
 ## Load Test Result
 
@@ -128,9 +130,11 @@ keys user:*
 keys location:*
 ```
 
+## Caveat
+- get station endpoint will give the result not in order because it's done by goroutines asynchronously
+
 ## Improvements Can Be Made
 
 - Initialize multiple locations (data seed)
 - Connect to a Message Queue broker
 - Improve unittest coverage
-- Structure the code into clean code architecture

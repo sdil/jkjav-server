@@ -17,7 +17,6 @@ type Repository interface {
 
 type repository struct {
 	Pool *redis.Pool
-	// MessageBroker 
 }
 
 // NewRepo is the single instance repo that is being created.
