@@ -23,6 +23,37 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/booking": {
+            "post": {
+                "description": "Create a vaccine booking slot",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Create Booking Slot",
+                "parameters": [
+                    {
+                        "description": "booking info",
+                        "name": "booking",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/entities.Booking"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/entities.Booking"
+                        }
+                    }
+                }
+            }
+        },
         "/stations/{name}": {
             "get": {
                 "description": "Get station slots by location",
@@ -57,6 +88,39 @@ var doc = `{
         }
     },
     "definitions": {
+        "entities.Booking": {
+            "type": "object",
+            "properties": {
+                "address": {
+                    "type": "string",
+                    "example": "Kuala Lumpur"
+                },
+                "date": {
+                    "type": "string",
+                    "example": "20210516"
+                },
+                "firstName": {
+                    "type": "string",
+                    "example": "Fadhil"
+                },
+                "lastName": {
+                    "type": "string",
+                    "example": "Yaacob"
+                },
+                "location": {
+                    "type": "string",
+                    "example": "PWTC"
+                },
+                "mysejahteraId": {
+                    "type": "string",
+                    "example": "900127015527"
+                },
+                "phoneNumber": {
+                    "type": "string",
+                    "example": "0123456789"
+                }
+            }
+        },
         "entities.Station": {
             "type": "object",
             "properties": {

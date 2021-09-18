@@ -13,17 +13,22 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/sdil/jkjav-server/api/routes"
 	"github.com/sdil/jkjav-server/docs"
+	"github.com/sdil/jkjav-server/pkg/booking"
 	"github.com/sdil/jkjav-server/pkg/entities"
 	"github.com/sdil/jkjav-server/pkg/station"
 )
 
 var (
-	Pool      *redis.Pool
 	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
 	EndDate   = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 )
 
-func init() {
+// @title JKJAV API Server
+// @version 1.0
+// @description High performant JKJAV API Server
+// @BasePath /
+func main() {
+
 	// Redis connection establishment
 	redisHost := os.Getenv("REDISHOST")
 	redisPort := os.Getenv("REDISPORT")
@@ -33,16 +38,10 @@ func init() {
 		redisPort = "6379"
 		redisPassword = ""
 	}
-	Pool = newPool(redisHost+":"+redisPort, redisPassword)
-
+	Pool := newPool(redisHost+":"+redisPort, redisPassword)
+	defer Pool.Close()
+	
 	CleanupHook()
-}
-
-// @title JKJAV API Server
-// @version 1.0
-// @description High performant JKJAV API Server
-// @BasePath /
-func main() {
 
 	RAILWAY_HOST := os.Getenv("RAILWAY_STATIC_URL")
 	if RAILWAY_HOST == "" {
@@ -55,6 +54,9 @@ func main() {
 	stationService := station.NewService(stationRepo)
 	InitializeLocations(stationService)
 
+	bookingRepo := booking.NewRepo(Pool)
+	bookingService := booking.NewService(bookingRepo)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "3000"
@@ -66,7 +68,7 @@ func main() {
 	})
 	app.Get("/swagger/*", swagger.Handler)
 	routes.StationRouter(app, stationService)
-	// app.Post("/booking", routes.CreateBooking)
+	routes.BookingRouter(app, bookingService)
 
 	app.Listen(":" + port)
 }
@@ -128,7 +130,6 @@ func CleanupHook() {
 	go func() {
 		<-c
 		fmt.Println("Shutting down!")
-		Pool.Close()
 		os.Exit(0)
 	}()
 }

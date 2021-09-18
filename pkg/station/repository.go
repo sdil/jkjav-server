@@ -9,15 +9,18 @@ import (
 	"github.com/sdil/jkjav-server/pkg/entities"
 )
 
-//Repository interface allows us to access the CRUD Operations in mongo here.
+// Repository interface allows us to access the CRUD Operations in mongo here.
 type Repository interface {
 	CreateStation(station *entities.Station) (*entities.Station, error)
 	ReadStation(location string, date string) (*entities.Station, error)
 }
+
 type repository struct {
 	Pool *redis.Pool
+	// MessageBroker 
 }
-//NewRepo is the single instance repo that is being created.
+
+// NewRepo is the single instance repo that is being created.
 func NewRepo(pool *redis.Pool) Repository {
 	return &repository{
 		Pool: pool,

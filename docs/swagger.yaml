@@ -1,5 +1,29 @@
 basePath: /
 definitions:
+  entities.Booking:
+    properties:
+      address:
+        example: Kuala Lumpur
+        type: string
+      date:
+        example: "20210516"
+        type: string
+      firstName:
+        example: Fadhil
+        type: string
+      lastName:
+        example: Yaacob
+        type: string
+      location:
+        example: PWTC
+        type: string
+      mysejahteraId:
+        example: "900127015527"
+        type: string
+      phoneNumber:
+        example: "0123456789"
+        type: string
+    type: object
   entities.Station:
     properties:
       availability:
@@ -18,6 +42,26 @@ info:
   title: JKJAV API Server
   version: "1.0"
 paths:
+  /booking:
+    post:
+      consumes:
+      - application/json
+      description: Create a vaccine booking slot
+      parameters:
+      - description: booking info
+        in: body
+        name: booking
+        required: true
+        schema:
+          $ref: '#/definitions/entities.Booking'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/entities.Booking'
+      summary: Create Booking Slot
   /stations/{name}:
     get:
       consumes:
