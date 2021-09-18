@@ -3,8 +3,8 @@ package station
 import (
 	"fmt"
 	"log"
-	"time"
 	"sync"
+	"time"
 
 	"github.com/sdil/jkjav-server/pkg/entities"
 )
@@ -37,10 +37,19 @@ func (s *service) FetchStations(location string, startDate time.Time, endDate ti
 	// Iterate each date
 	days := endDate.Sub(startDate).Hours() / 24
 	daysInt := int(days)
-	for i := 1; i < daysInt; i++ {		
+	for i := 1; i < daysInt; i++ {
+		
+		// Spawn a goroutine to fetch the data for each day
+		// and append them into `stations` slice
+		// Use waitgroup to wait for all of them to finish fetching the data
+		// before returing a reponse to the user
+
+		// WARNING: This may cause issues with Redis connection
+		// it will open a lot of connections to Redis and overwhelm it
+
 		date := startDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
 		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
-		
+
 		wg.Add(1)
 		go s.ReadStations(&stations, location, dateString, &wg)
 	}
@@ -52,7 +61,7 @@ func (s *service) FetchStations(location string, startDate time.Time, endDate ti
 func (s *service) ReadStations(stations *[]entities.Station, location string, date string, wg *sync.WaitGroup) {
 	station, err := s.repository.ReadStation(location, date)
 	if err != nil {
-		log.Printf("Failed to read stations %s", date)
+		log.Printf("Failed to read stations %s %s %s", location, date, err.Error())
 	} else {
 		*stations = append(*stations, *station)
 	}

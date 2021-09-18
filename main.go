@@ -11,15 +11,16 @@ import (
 	swagger "github.com/arsmn/fiber-swagger/v2"
 	"github.com/gofiber/fiber/v2"
 	"github.com/gomodule/redigo/redis"
-	"github.com/sdil/jkjav-server/pkg/station"
 	"github.com/sdil/jkjav-server/api/routes"
 	"github.com/sdil/jkjav-server/docs"
+	"github.com/sdil/jkjav-server/pkg/entities"
+	"github.com/sdil/jkjav-server/pkg/station"
 )
 
 var (
 	Pool      *redis.Pool
-	StartDate time.Time
-	EndDate   time.Time
+	StartDate = time.Date(2021, time.May, 15, 0, 0, 0, 0, time.UTC)
+	EndDate   = time.Date(2021, time.June, 15, 0, 0, 0, 0, time.UTC)
 )
 
 func init() {
@@ -34,7 +35,6 @@ func init() {
 	}
 	Pool = newPool(redisHost+":"+redisPort, redisPassword)
 
-	// InitializeLocations()
 	CleanupHook()
 }
 
@@ -53,6 +53,7 @@ func main() {
 
 	stationRepo := station.NewRepo(Pool)
 	stationService := station.NewService(stationRepo)
+	InitializeLocations(stationService)
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -70,21 +71,27 @@ func main() {
 	app.Listen(":" + port)
 }
 
-// func InitializeLocations() {
-// 	// Read locations.json file
-// 	// And ensure the locations key in Redis exists
-// 	log.Println("initialize locations")
+func InitializeLocations(service station.Service) {
+	// Read locations.json file
+	// And ensure the locations key in Redis exists
+	log.Println("initialize locations")
 
-// 	// iterate each date
-// 	days := EndDate.Sub(StartDate).Hours() / 24
-// 	daysInt := int(days)
-// 	for i := 1; i < daysInt; i++ {
-// 		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
-// 		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
-// 		ppv := PPV{Location: "PWTC", Date: dateString, Availability: 1000}
-// 		SetLocation(ppv)
-// 	}
-// }
+	// Iterate each date and create station
+	days := EndDate.Sub(StartDate).Hours() / 24
+	daysInt := int(days)
+	for i := 1; i < daysInt; i++ {
+		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
+		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
+		station := entities.Station{Location: "PWTC", Date: dateString, Availability: 1000}
+
+		go func() {
+			_, err := service.InsertStation(&station)
+			if err != nil {
+				log.Printf("Failed to create station %v", station)
+			}
+		}()
+	}
+}
 
 func newPool(server string, password string) *redis.Pool {
 
@@ -92,6 +99,8 @@ func newPool(server string, password string) *redis.Pool {
 
 	return &redis.Pool{
 
+		Wait:        true,
+		MaxActive:   5,
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 

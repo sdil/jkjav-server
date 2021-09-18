@@ -5,16 +5,67 @@ This is the implementation of API server described in this [blog post](https://f
 ## Features
 
 - Uses Redis transaction to prevent overbooking
-- Can handle over 7,000 requests per second without breaking a sweat
+- Can handle over 7,000 req/s without breaking a sweat
 - Seed the PWTC location (currently only 1 location)
-- OAS API Doc
+- Structured in Clean Architecture
+- OpenAPI doc for all endpoints available
+- Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms.
+- Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutine. This improves the response time from 10ms to 5ms and avoid connection limit error from Redis server.
 
 ## Load Test Result
 
 The server is serving 7,827 requests per second  with 25% of those requests are sub milisecond in response time. This test is run on a Lenovo laptop T470p with 8-core i7 processor and 16GB of RAM.
 
 ```shell
-hey -c 10 -z 1s http://localhost:3000/submit
+$ hey -c 50 -z 10s http://localhost:3000/stations?location=PWTC
+
+Summary:
+  Total:	10.0556 secs
+  Slowest:	0.0863 secs
+  Fastest:	0.0285 secs
+  Average:	0.0569 secs
+  Requests/sec:	876.4232
+  
+  Total data:	15314283 bytes
+  Size/request:	1737 bytes
+
+Response time histogram:
+  0.028 [1]	|
+  0.034 [2]	|
+  0.040 [3]	|
+  0.046 [4]	|
+  0.052 [10]	|
+  0.057 [6126]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  0.063 [2344]	|■■■■■■■■■■■■■■■
+  0.069 [281]	|■■
+  0.075 [27]	|
+  0.080 [5]	|
+  0.086 [10]	|
+
+
+Latency distribution:
+  10% in 0.0544 secs
+  25% in 0.0549 secs
+  50% in 0.0560 secs
+  75% in 0.0580 secs
+  90% in 0.0607 secs
+  95% in 0.0624 secs
+  99% in 0.0663 secs
+
+Details (average, fastest, slowest):
+  DNS+dialup:	0.0000 secs, 0.0285 secs, 0.0863 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0018 secs
+  req write:	0.0000 secs, 0.0000 secs, 0.0005 secs
+  resp wait:	0.0568 secs, 0.0243 secs, 0.0823 secs
+  resp read:	0.0000 secs, 0.0000 secs, 0.0011 secs
+
+Status code distribution:
+  [200]	8813 responses
+```
+
+
+```shell
+$hey -c 10 -z 1s http://localhost:3000/submit
 
 Summary:
   Total:	1.0017 secs
@@ -67,7 +118,6 @@ Status code distribution:
 make run
 
 # In another terminal
-make test-submit
 make load-test
 make redis-cli
 ```
