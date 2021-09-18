@@ -23,22 +23,23 @@ var doc = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/list-ppv": {
+        "/stations/{name}": {
             "get": {
-                "description": "Get PPV slots by state",
+                "description": "Get station slots by location",
                 "consumes": [
                     "application/json"
                 ],
                 "produces": [
                     "application/json"
                 ],
-                "summary": "List PPV",
+                "summary": "List Station",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "list PPV by state. The only available option is PWTC",
-                        "name": "state",
-                        "in": "query"
+                        "description": "select the location. The only available option is PWTC",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
                     }
                 ],
                 "responses": {
@@ -47,39 +48,8 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/main.PPV"
+                                "$ref": "#/definitions/entities.Station"
                             }
-                        }
-                    }
-                }
-            }
-        },
-        "/submit": {
-            "post": {
-                "description": "Submit vaccine booking slot",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "summary": "Submit",
-                "parameters": [
-                    {
-                        "description": "User info",
-                        "name": "user",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/main.User"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/main.User"
                         }
                     }
                 }
@@ -87,7 +57,7 @@ var doc = `{
         }
     },
     "definitions": {
-        "main.PPV": {
+        "entities.Station": {
             "type": "object",
             "properties": {
                 "availability": {
@@ -101,39 +71,6 @@ var doc = `{
                 "location": {
                     "type": "string",
                     "example": "PWTC"
-                }
-            }
-        },
-        "main.User": {
-            "type": "object",
-            "properties": {
-                "address": {
-                    "type": "string",
-                    "example": "Kuala Lumpur"
-                },
-                "date": {
-                    "type": "string",
-                    "example": "20210516"
-                },
-                "firstName": {
-                    "type": "string",
-                    "example": "Fadhil"
-                },
-                "lastName": {
-                    "type": "string",
-                    "example": "Yaacob"
-                },
-                "location": {
-                    "type": "string",
-                    "example": "PWTC"
-                },
-                "mysejahteraId": {
-                    "type": "string",
-                    "example": "900127015527"
-                },
-                "phoneNumber": {
-                    "type": "string",
-                    "example": "0123456789"
                 }
             }
         }

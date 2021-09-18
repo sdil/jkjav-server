@@ -11,7 +11,7 @@ import (
 
 type Service interface {
 	InsertStation(station *entities.Station) (*entities.Station, error)
-	FetchStations(location string, startDate time.Time, endDate time.Time) (*[]entities.Station, error)
+	FetchStation(location string, startDate time.Time, endDate time.Time) (*[]entities.Station, error)
 }
 
 type service struct {
@@ -29,7 +29,7 @@ func (s *service) InsertStation(station *entities.Station) (*entities.Station, e
 	return s.repository.CreateStation(station)
 }
 
-func (s *service) FetchStations(location string, startDate time.Time, endDate time.Time) (*[]entities.Station, error) {
+func (s *service) FetchStation(location string, startDate time.Time, endDate time.Time) (*[]entities.Station, error) {
 
 	var wg sync.WaitGroup
 	stations := []entities.Station{}
@@ -38,14 +38,14 @@ func (s *service) FetchStations(location string, startDate time.Time, endDate ti
 	days := endDate.Sub(startDate).Hours() / 24
 	daysInt := int(days)
 	for i := 1; i < daysInt; i++ {
-		
+
 		// Spawn a goroutine to fetch the data for each day
 		// and append them into `stations` slice
 		// Use waitgroup to wait for all of them to finish fetching the data
 		// before returing a reponse to the user
 
-		// WARNING: This may cause issues with Redis connection
-		// it will open a lot of connections to Redis and overwhelm it
+		// Note: It's safe to spawn a lot of goroutines as we're using
+		// Redis connection pool to limit the number of Redis connections created
 
 		date := startDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
 		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())

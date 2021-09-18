@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  main.PPV:
+  entities.Station:
     properties:
       availability:
         example: 10
@@ -12,45 +12,22 @@ definitions:
         example: PWTC
         type: string
     type: object
-  main.User:
-    properties:
-      address:
-        example: Kuala Lumpur
-        type: string
-      date:
-        example: "20210516"
-        type: string
-      firstName:
-        example: Fadhil
-        type: string
-      lastName:
-        example: Yaacob
-        type: string
-      location:
-        example: PWTC
-        type: string
-      mysejahteraId:
-        example: "900127015527"
-        type: string
-      phoneNumber:
-        example: "0123456789"
-        type: string
-    type: object
 info:
   contact: {}
   description: High performant JKJAV API Server
   title: JKJAV API Server
   version: "1.0"
 paths:
-  /list-ppv:
+  /stations/{name}:
     get:
       consumes:
       - application/json
-      description: Get PPV slots by state
+      description: Get station slots by location
       parameters:
-      - description: list PPV by state. The only available option is PWTC
-        in: query
-        name: state
+      - description: select the location. The only available option is PWTC
+        in: path
+        name: name
+        required: true
         type: string
       produces:
       - application/json
@@ -59,27 +36,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/main.PPV'
+              $ref: '#/definitions/entities.Station'
             type: array
-      summary: List PPV
-  /submit:
-    post:
-      consumes:
-      - application/json
-      description: Submit vaccine booking slot
-      parameters:
-      - description: User info
-        in: body
-        name: user
-        required: true
-        schema:
-          $ref: '#/definitions/main.User'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/main.User'
-      summary: Submit
+      summary: List Station
 swagger: "2.0"

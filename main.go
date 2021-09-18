@@ -74,7 +74,7 @@ func main() {
 func InitializeLocations(service station.Service) {
 	// Read locations.json file
 	// And ensure the locations key in Redis exists
-	log.Println("initialize locations")
+	log.Println("Initialize locations")
 
 	// Iterate each date and create station
 	days := EndDate.Sub(StartDate).Hours() / 24

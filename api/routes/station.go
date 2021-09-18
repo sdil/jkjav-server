@@ -10,7 +10,7 @@ import (
 )
 
 func StationRouter(app fiber.Router, service station.Service) {
-	app.Get("/stations", listStations(service))
+	app.Get("/stations/:name", listStations(service))
 }
 
 var (
@@ -23,24 +23,24 @@ var (
 // @Description Get station slots by location
 // @Accept  json
 // @Produce  json
-// @Param location query string false "list location. The only available option is PWTC"
-// @Success 200 {array} Station
-// @Router /stations [get]
+// @Param name path string true "select the location. The only available option is PWTC"
+// @Success 200 {array} entities.Station
+// @Router /stations/{name} [get]
 func listStations(service station.Service) fiber.Handler {
 	return func(c *fiber.Ctx) error {
-		location := c.Query("location")
+		location := c.Params("name")
 		if location == "" {
 			return c.Status(fiber.StatusBadRequest).SendString("Please select a location")
 		}
-	
-		stations, err := service.FetchStations("PWTC", StartDate, EndDate)
+
+		stations, err := service.FetchStation("PWTC", StartDate, EndDate)
 		if err != nil {
 			c.SendString(err.Error())
 		}
-	
+
 		// Set Cache-control header to 1s
 		c.Set(fiber.HeaderCacheControl, fmt.Sprintf("public, max-age=1"))
-	
+
 		return c.JSON(stations)
 	}
 }

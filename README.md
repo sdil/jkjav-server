@@ -6,7 +6,7 @@ This is the implementation of API server described in this [blog post](https://f
 
 - Uses Redis transaction to prevent overbooking
 - Can handle over 7,000 req/s without breaking a sweat
-- Seed the PWTC location (currently only 1 location)
+- Seed the vaccine station (currently only 1 location)
 - Structured in Clean Architecture
 - OpenAPI doc for all endpoints available
 - Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms, 300 req/s to 800 req/s.
