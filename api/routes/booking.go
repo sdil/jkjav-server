@@ -28,7 +28,11 @@ func createBooking(service booking.Service) fiber.Handler {
 	
 		_, err := service.InsertBooking(booking)
 		if err != nil {
-			return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+			if err.Error() == "Sorry, station is fully booked" {
+				return c.Status(fiber.StatusBadRequest).SendString(err.Error())
+			} else {
+				return c.Status(fiber.StatusInternalServerError).SendString(err.Error())
+			}
 		}
 	
 		return c.JSON(booking)

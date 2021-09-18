@@ -1,8 +1,13 @@
 run:
-	docker run -d -p 6379:6379 --name redis-jkjav redis
-	go run .
+	docker-compose build
+	docker-compose down
+	docker-compose up
+	# go run .
 
-load-test:
+load-get-test:
+	hey -c 100 -z 5s http://localhost:3000/stations/PWTC
+
+load-post-test:
 	hey -T "application/json" \
 	-c 100 \
 	-z 5s \

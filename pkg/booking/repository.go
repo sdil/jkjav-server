@@ -8,24 +8,25 @@ import (
 	"github.com/sdil/jkjav-server/pkg/entities"
 	"gopkg.in/Shopify/sarama.v1"
 )
-type Repository interface{
+
+type Repository interface {
 	CreateBooking(booking *entities.Booking) (*entities.Booking, error)
 	PublishMessage(booking *entities.Booking) error
 }
 
 type repository struct {
-	Pool *redis.Pool
+	Pool          *redis.Pool
 	MessageBroker sarama.SyncProducer
 }
 
 func NewRepo(pool *redis.Pool, mb sarama.SyncProducer) Repository {
 	return &repository{
-		Pool: pool,
+		Pool:          pool,
 		MessageBroker: mb,
 	}
 }
 
-func (r *repository) CreateBooking(booking *entities.Booking) (*entities.Booking, error){
+func (r *repository) CreateBooking(booking *entities.Booking) (*entities.Booking, error) {
 	conn := r.Pool.Get()
 	defer conn.Close()
 
@@ -89,9 +90,15 @@ func (r *repository) CreateBooking(booking *entities.Booking) (*entities.Booking
 }
 
 func (r *repository) PublishMessage(booking *entities.Booking) error {
-	r.MessageBroker.SendMessage(&sarama.ProducerMessage{
+
+	if r.MessageBroker != nil {
+		r.MessageBroker.SendMessage(&sarama.ProducerMessage{
 			Topic: "booking-slot",
 			Value: sarama.StringEncoder("test"),
 		})
-	return nil
+		return nil
+	} else {
+		log.Println("Silently ignore this error. Your infra probably don't have Kafka available.")
+		return nil
+	}
 }

@@ -32,16 +32,16 @@ func main() {
 
 	Pool := newRedisPool()
 	defer Pool.Close()
-	
+
 	CleanupHook()
 
+	var messageProducer sarama.SyncProducer
 	if RAILWAY_HOST := os.Getenv("RAILWAY_STATIC_URL"); RAILWAY_HOST == "" {
 		docs.SwaggerInfo.Host = "localhost:3000"
+		messageProducer = newKafkaProducer()
 	} else {
 		docs.SwaggerInfo.Host = RAILWAY_HOST
 	}
-
-	messageProducer := newKafkaProducer([]string{"localhost:9092"})
 
 	stationRepo := station.NewRepo(Pool)
 	stationService := station.NewService(stationRepo)
@@ -66,7 +66,7 @@ func main() {
 	app.Listen(":" + port)
 }
 
-func newKafkaProducer(brokerList []string) sarama.SyncProducer {
+func newKafkaProducer() sarama.SyncProducer {
 	// For the data collector, we are looking for strong consistency semantics.
 	// Because we don't change the flush settings, sarama will try to produce messages
 	// as fast as possible to keep latency low.
@@ -75,9 +75,19 @@ func newKafkaProducer(brokerList []string) sarama.SyncProducer {
 	config.Producer.Retry.Max = 10                   // Retry up to 10 times to produce the message
 	config.Producer.Return.Successes = true
 
+	brokerList := []string{}
+
+	if BROKER_URL := os.Getenv("BROKER_URL"); BROKER_URL == "" {
+		brokerList = append(brokerList, "localhost:9092")
+	} else {
+		brokerList = append(brokerList, BROKER_URL)
+	}
+	log.Println(brokerList)
+
 	producer, err := sarama.NewSyncProducer(brokerList, config)
 	if err != nil {
-		log.Fatalln("Failed to start Sarama producer:", err)
+		log.Println("Failed to start Sarama producer:", err)
+		return nil
 	}
 
 	return producer
