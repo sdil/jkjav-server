@@ -32,11 +32,9 @@ func (r *repository) CreateStation(station *entities.Station) (*entities.Station
 
 	_, err := conn.Do("SET", key, station.Availability)
 	if err != nil {
-		log.Printf("error setting key %s: %v", key, err)
 		return station, fmt.Errorf("error setting key %s: %v", key, err)
 	}
 
-	log.Println("Added location " + key)
 	return station, err
 }
 

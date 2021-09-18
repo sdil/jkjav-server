@@ -100,7 +100,7 @@ func newPool(server string, password string) *redis.Pool {
 	return &redis.Pool{
 
 		Wait:        true,
-		MaxActive:   5,
+		MaxActive:   20,
 		MaxIdle:     3,
 		IdleTimeout: 240 * time.Second,
 

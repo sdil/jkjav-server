@@ -9,8 +9,8 @@ This is the implementation of API server described in this [blog post](https://f
 - Seed the PWTC location (currently only 1 location)
 - Structured in Clean Architecture
 - OpenAPI doc for all endpoints available
-- Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms.
-- Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutine. This improves the response time from 10ms to 5ms and avoid connection limit error from Redis server.
+- Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms, 300 req/s to 800 req/s.
+- Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutine. This improves the response time from 10ms to 5ms, 800 req/s to 1200 req/s and avoid connection limit error from Redis server.
 
 ## Load Test Result
 
@@ -20,47 +20,47 @@ The server is serving 7,827 requests per second  with 25% of those requests are 
 $ hey -c 50 -z 10s http://localhost:3000/stations?location=PWTC
 
 Summary:
-  Total:	10.0556 secs
-  Slowest:	0.0863 secs
-  Fastest:	0.0285 secs
-  Average:	0.0569 secs
-  Requests/sec:	876.4232
+  Total:	10.0385 secs
+  Slowest:	0.1060 secs
+  Fastest:	0.0079 secs
+  Average:	0.0403 secs
+  Requests/sec:	1236.0401
   
-  Total data:	15314283 bytes
-  Size/request:	1737 bytes
+  Total data:	21488345 bytes
+  Size/request:	1731 bytes
 
 Response time histogram:
-  0.028 [1]	|
-  0.034 [2]	|
-  0.040 [3]	|
-  0.046 [4]	|
-  0.052 [10]	|
-  0.057 [6126]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
-  0.063 [2344]	|■■■■■■■■■■■■■■■
-  0.069 [281]	|■■
-  0.075 [27]	|
-  0.080 [5]	|
-  0.086 [10]	|
+  0.008 [1]	|
+  0.018 [6]	|
+  0.028 [10]	|
+  0.037 [179]	|■
+  0.047 [12088]	|■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■
+  0.057 [47]	|
+  0.067 [20]	|
+  0.077 [7]	|
+  0.086 [7]	|
+  0.096 [27]	|
+  0.106 [16]	|
 
 
 Latency distribution:
-  10% in 0.0544 secs
-  25% in 0.0549 secs
-  50% in 0.0560 secs
-  75% in 0.0580 secs
-  90% in 0.0607 secs
-  95% in 0.0624 secs
-  99% in 0.0663 secs
+  10% in 0.0384 secs
+  25% in 0.0391 secs
+  50% in 0.0399 secs
+  75% in 0.0410 secs
+  90% in 0.0420 secs
+  95% in 0.0427 secs
+  99% in 0.0472 secs
 
 Details (average, fastest, slowest):
-  DNS+dialup:	0.0000 secs, 0.0285 secs, 0.0863 secs
-  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0018 secs
-  req write:	0.0000 secs, 0.0000 secs, 0.0005 secs
-  resp wait:	0.0568 secs, 0.0243 secs, 0.0823 secs
-  resp read:	0.0000 secs, 0.0000 secs, 0.0011 secs
+  DNS+dialup:	0.0000 secs, 0.0079 secs, 0.1060 secs
+  DNS-lookup:	0.0000 secs, 0.0000 secs, 0.0031 secs
+  req write:	0.0000 secs, 0.0000 secs, 0.0011 secs
+  resp wait:	0.0403 secs, 0.0048 secs, 0.1060 secs
+  resp read:	0.0000 secs, 0.0000 secs, 0.0012 secs
 
 Status code distribution:
-  [200]	8813 responses
+  [200]	12408 responses
 ```
 
 
