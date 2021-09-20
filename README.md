@@ -9,8 +9,8 @@ This is the implementation of API server described in this [blog post](https://f
 - Structured in Clean Architecture
 - OpenAPI doc for all endpoints available
 - Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms, 300 req/s to 800 req/s.
-- Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutine. This improves the response time from 10ms to 5ms, 800 req/s to 1200 req/s and avoid connection limit error from Redis server.
-- Connects to Redpanda, a Kafka-compatible broker
+- Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutines in parallel. This improves the response time from 10ms to 5ms, 800 req/s to 1200 req/s and avoid connection limit error from Redis server.
+- Connects to Redpanda, a Kafka-compatible broker and publishes message after a new booking is made
 - Comes with docker-compose yaml file to ease environment creation
 
 ## Load Test Result
@@ -131,7 +131,7 @@ keys location:*
 ```
 
 ## Caveats
-- get station endpoint will give the result not ordered in date because the data fetching are done by goroutines asynchronously
+- get station endpoint will give the result not ordered in date because the data fetching are done by goroutines in parallel
 
 ## Improvements Can Be Made
 
