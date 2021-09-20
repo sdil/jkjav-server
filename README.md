@@ -12,6 +12,7 @@ This is the implementation of API server described in this [blog post](https://f
 - Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutines in parallel. This improves the response time from 10ms to 5ms, 800 req/s to 1200 req/s and avoid connection limit error from Redis server.
 - Connects to Redpanda, a Kafka-compatible broker and publishes message after a new booking is made
 - Comes with docker-compose yaml file to ease environment creation
+- Unit test built with Mockery & table driven test
 
 ## Load Test Result
 
