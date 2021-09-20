@@ -17,3 +17,6 @@ load-post-test:
 
 redis-cli:
 	 docker-compose exec -it redis redis-cli
+
+test:
+	go test -v ./api/routes/
