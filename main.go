@@ -96,11 +96,16 @@ func newKafkaProducer() sarama.SyncProducer {
 func InitializeLocations(service station.Service) {
 	// Read locations.json file
 	// And ensure the locations key in Redis exists
-	log.Println("Initialize locations")
+	log.Println("Initializing locations")
+
+	totalSlots := map[string]int{"PWTC": 0}
+	locationResults := make(chan map[string]int)
+	defer close(locationResults)
 
 	// Iterate each date and create station
 	days := EndDate.Sub(StartDate).Hours() / 24
 	daysInt := int(days)
+
 	for i := 1; i < daysInt; i++ {
 		date := StartDate.Add(time.Hour * time.Duration(i) * time.Duration(24))
 		dateString := fmt.Sprintf("%d%02d%02d", date.Year(), date.Month(), date.Day())
@@ -110,9 +115,23 @@ func InitializeLocations(service station.Service) {
 			_, err := service.InsertStation(&station)
 			if err != nil {
 				log.Printf("Failed to create station %v", station)
+			} else {
+				// track the successfully added location availability slot
+				locationResults <- map[string]int{station.Location: station.Availability}
 			}
 		}()
 	}
+
+	for i := 1; i < daysInt; i++ {
+		result := <-locationResults
+
+		// iterate each kv in the result
+		for location, availability := range result {
+			totalSlots[location] += availability
+		}
+	}
+
+	log.Printf("Total booking slots created %v", totalSlots)
 }
 
 func newRedisPool() *redis.Pool {

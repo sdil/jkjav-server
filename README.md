@@ -4,10 +4,12 @@ This is the implementation of API server described in this [blog post](https://f
 
 ## Features
 
+- Data is stored in denormalized structure in Redis and the slot availability counter is materialized to ensure read path is fast
 - Uses Redis transaction to prevent overbooking and ensure atomicity
 - Seed the vaccine station (currently only 1 location)
 - Structured in Clean Architecture
 - OpenAPI doc for all endpoints available
+- Used go channel to keep track of booking slots created during app initialization
 - Leverages goroutine to read and write data to Redis. This improves the response time from 20ms to 10ms, 300 req/s to 800 req/s.
 - Uses Redigo connection pooling to safely execute commands on Redis server from lots of goroutines in parallel. This improves the response time from 10ms to 5ms, 800 req/s to 1200 req/s and avoid connection limit error from Redis server.
 - Connects to Redpanda, a Kafka-compatible broker and publishes message after a new booking is made
@@ -138,4 +140,5 @@ keys location:*
 
 - Initialize multiple locations (data seed)
 - Improve unittest coverage
+- Better data validation & checking
 - Add telemetry
