@@ -56,13 +56,16 @@ func TestCreate(t *testing.T) {
 		jsonBooking, _ := json.Marshal(test.booking)
 		req := httptest.NewRequest("POST", test.route, bytes.NewBuffer(jsonBooking))
 		req.Header.Set("Content-Type", "application/json")
-		resp, _ := app.Test(req, 1)
+		resp, err := app.Test(req, 1)
+
+		assert.Nilf(t, err, fmt.Sprintf("Failed to make request to %s", test.route))
 
 		// Verify, if the status code is as expected
 		assert.Equalf(t, test.expectedCode, resp.StatusCode, fmt.Sprintf("'%s' test status code is not same", test.description))
 
 		// Read the response body
 		body, err := ioutil.ReadAll(resp.Body)
+		assert.Nilf(t, err, fmt.Sprintf("Failed to read response body %s", test.route))
 
 		// Reading the response body should work everytime, such that
 		// the err variable should be nil
