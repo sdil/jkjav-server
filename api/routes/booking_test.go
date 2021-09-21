@@ -35,6 +35,13 @@ func TestCreate(t *testing.T) {
 			expectedCode: 200,
 			expectedBody: `{"mysejahteraId":"900127015527","firstName":"Fadhil","lastName":"Yaacob","address":"Kuala Lumpur","location":"PWTC","phoneNumber":"0123456789","date":"20210517"}`,
 		},
+		{
+			description:  "Create valid booking",
+			route:        "/booking",
+			booking:      &entities.Booking{MySejahteraID: "", FirstName: "Fadhil", LastName: "Yaacob", Location: "PWTC", Address: "Kuala Lumpur", PhoneNumber: "0123456789", Date: "20210517"},
+			expectedCode: 400,
+			expectedBody: `{"message":"MySejahteraID cannot be empty","status":"Failed"}`,
+		},
 	}
 
 	app := fiber.New()

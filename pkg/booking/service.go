@@ -1,6 +1,8 @@
 package booking
 
 import (
+	"fmt"
+
 	"github.com/sdil/jkjav-server/pkg/entities"
 )
 
@@ -19,6 +21,10 @@ func NewService(r Repository) Service {
 }
 
 func (s *service) InsertBooking(booking *entities.Booking) (*entities.Booking, error) {
+
+	if booking.MySejahteraID == "" {
+		return nil, fmt.Errorf("MySejahteraID cannot be empty")
+	}
 	
 	// Insert the data in data store
 	_, err := s.repository.CreateBooking(booking)
