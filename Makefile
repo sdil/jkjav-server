@@ -2,7 +2,7 @@ run:
 	docker-compose build
 	docker-compose down
 	docker-compose up
-	# go run .
+	go run .
 
 load-get-test:
 	hey -c 100 -z 5s http://localhost:3000/stations/PWTC

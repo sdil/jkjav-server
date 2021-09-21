@@ -25,6 +25,8 @@ func (s *service) InsertBooking(booking *entities.Booking) (*entities.Booking, e
 	if booking.MySejahteraID == "" {
 		return nil, fmt.Errorf("MySejahteraID cannot be empty")
 	}
+
+	// TODO: Add more validation checks here
 	
 	// Insert the data in data store
 	_, err := s.repository.CreateBooking(booking)

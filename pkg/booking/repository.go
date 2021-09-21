@@ -1,6 +1,7 @@
 package booking
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -91,10 +92,16 @@ func (r *repository) CreateBooking(booking *entities.Booking) (*entities.Booking
 
 func (r *repository) PublishMessage(booking *entities.Booking) error {
 
+	bookingString, err := json.Marshal(booking)
+
+	if err != nil {
+		return fmt.Errorf("Failed to marshal booking JSON")
+	}
+
 	if r.MessageBroker != nil {
 		r.MessageBroker.SendMessage(&sarama.ProducerMessage{
 			Topic: "booking-slot",
-			Value: sarama.StringEncoder("test"),
+			Value: sarama.StringEncoder(bookingString),
 		})
 		return nil
 	} else {
